@@ -1,0 +1,64 @@
+---
+title: "Convert SingleCellExperiment to h5ad for cellxgene"
+author: "Frederick J Tan"
+date: "14 September 2023"
+output: 
+  html_notebook:
+    toc: true
+    toc_float: true
+---
+
+# Background
+
+- https://github.com/chanzuckerberg/cellxgene-documentation/blob/main/desktop/data-reqs.md
+
+# Load packages
+
+```{r message=FALSE}
+library( "MouseGastrulationData" )
+library( "zellkonverter" )
+```
+
+# Load data
+
+```{r}
+sce21 <- EmbryoAtlasData( sample=21 )
+```
+
+# Convert to character
+
+```{r}
+coi <- c( "sample", "pool", "sequencing.batch", "cluster", "cluster.sub", "cluster.stage", "cluster.theiler" )
+for (column in coi) {
+  colData(sce21)[,column] <- as.character( colData(sce21)[,column] )
+}
+```
+
+# Prefix with X_
+
+```{r}
+reducedDimNames(sce21) <- paste0( "X_", reducedDimNames(sce21) )
+```
+
+# Save as .h5ad
+
+```{r}
+zellkonverter::writeH5AD( sce21, "mgd.21.h5ad" )
+```
+
+# Convert to numpy
+
+```{python}
+import anndata as ad
+adata = ad.read( "mgd.21.h5ad" )
+adata.obsm['X_umap'] = adata.obsm['X_umap'].to_numpy()
+adata.obsm['X_pca.corrected'] = adata.obsm['X_pca.corrected'].to_numpy()
+adata.write( "mgd.21.h5ad" )
+```
+
+# Session Info
+
+```{r}
+sessionInfo()
+```
+
